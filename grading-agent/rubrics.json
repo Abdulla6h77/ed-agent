@@ -1,0 +1,48 @@
+{
+  "rubrics": [
+    {
+      "grade": "Grade 9",
+      "subject": "Mathematics",
+      "topic": "Quadratic Equations",
+      "expected_concepts": [
+        "Identify the standard form ax^2 + bx + c = 0 where a, b, c are real numbers and a != 0",
+        "Recognize the coefficients a, b, c from a given equation",
+        "Solve by factorization, including splitting the middle term",
+        "Solve using the quadratic formula x = (-b +/- sqrt(b^2 - 4ac)) / (2a)",
+        "Relate the roots of the equation to the x-intercepts of its parabola",
+        "Verify a candidate solution by substituting it back into the original equation"
+      ],
+      "common_mistakes": [
+        "Forgetting that a must be non-zero (x + 5 = 0 is linear, not quadratic)",
+        "Sign errors when applying the quadratic formula, especially dropping the minus in -b",
+        "Arithmetic errors under the square root, such as miscomputing b^2 - 4ac",
+        "Dropping the +/- and reporting only one of the two roots",
+        "Incorrect factorization, e.g. writing (x + 2)(x + 3) when the signs in the middle term are negative",
+        "Cancelling x incorrectly, e.g. from x^2 = 5x dividing by x and losing the x = 0 root"
+      ],
+      "sample_correct_answer": "To solve x^2 - 5x + 6 = 0: this is quadratic with a = 1, b = -5, c = 6. Factor by finding two numbers that multiply to 6 and add to -5, which are -2 and -3, so (x - 2)(x - 3) = 0. Therefore x = 2 or x = 3. Check: (2)^2 - 5(2) + 6 = 4 - 10 + 6 = 0, and (3)^2 - 5(3) + 6 = 9 - 15 + 6 = 0. Both roots are correct."
+    },
+    {
+      "grade": "Grade 9",
+      "subject": "Physics",
+      "topic": "Newton's Laws of Motion",
+      "expected_concepts": [
+        "State Newton's First Law: an object at rest or in uniform motion stays that way unless acted on by a net external force (inertia)",
+        "State Newton's Second Law: F = ma, the net force equals mass times acceleration",
+        "State Newton's Third Law: every action has an equal and opposite reaction, and the two forces act on different bodies",
+        "Distinguish mass (kg) from weight (N), where weight = mg",
+        "Identify the forces on a body (gravity, normal, friction) in a free-body diagram",
+        "Apply F = ma using consistent SI units (Newtons, kilograms, m/s^2)"
+      ],
+      "common_mistakes": [
+        "Confusing mass with weight, e.g. stating weight in kilograms instead of newtons",
+        "Thinking the action-reaction pair acts on the same body",
+        "Believing a moving object needs a continuous force to keep moving (ignoring inertia and friction)",
+        "Mixing units, e.g. using grams with Newtons instead of converting to kilograms",
+        "Confusing the net force with a single individual force from the diagram",
+        "Assuming heavier objects fall faster, ignoring that g is the same for all masses near Earth"
+      ],
+      "sample_correct_answer": "A 10 kg cart is pushed with a net force of 25 N. Using Newton's Second Law, F = ma, so a = F/m = 25 N / 10 kg = 2.5 m/s^2. The acceleration is 2.5 m/s^2 in the direction of the applied force. Note the weight is mg = 10 * 9.8 = 98 N, which is separate from the 25 N push."
+    }
+  ]
+}

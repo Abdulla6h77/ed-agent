@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ed Agent — Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --chalk-green:#1E3B32;
+    --chalk-green-deep:#152D26;
+    --chalk-white:#F6F4EC;
+    --brass:#C68A3D;
+    --brass-dim:#a8742f;
+    --slate:#37587A;
+    --grid-line:#D8E3DC;
+    --correction:#B8502E;
+    --ink:#1E2B26;
+    --paper:#FBFAF4;
+    --paper-dim:#F0EEE3;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--chalk-green-deep);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+  }
+  .app{
+    max-width:1000px;
+    margin:0 auto;
+    min-height:100vh;
+    background:var(--paper);
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 28px 28px;
+    box-shadow: 0 0 60px rgba(0,0,0,0.35);
+  }
+  header{
+    background:var(--chalk-green);
+    color:var(--chalk-white);
+    padding:28px 36px 0 36px;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    margin-bottom:22px;
+  }
+  .brand-mark{
+    font-family:'Fraunces',serif;
+    font-weight:700;
+    font-size:26px;
+    letter-spacing:-0.01em;
+  }
+  .brand-sub{
+    font-size:12px;
+    color:#B9CFC3;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+  }
+  nav.tabs{
+    display:flex;
+    gap:4px;
+  }
+  .tab{
+    position:relative;
+    padding:12px 20px 14px 20px;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    color:#CBDCD2;
+    background:rgba(255,255,255,0.04);
+    border:none;
+    border-radius:10px 10px 0 0;
+    cursor:pointer;
+    transform:translateY(4px);
+    transition:transform .15s ease, background .15s ease, color .15s ease;
+  }
+  .tab:hover{ color:var(--chalk-white); }
+  .tab.active{
+    background:var(--paper);
+    color:var(--chalk-green);
+    transform:translateY(0);
+  }
+  main{
+    padding:36px;
+    min-height:520px;
+  }
+  .panel{ display:none; }
+  .panel.active{ display:block; animation:fade .25s ease; }
+  @keyframes fade{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+
+  h1.page-title{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:26px;
+    margin:0 0 4px 0;
+    color:var(--chalk-green);
+    display:inline-block;
+    position:relative;
+  }
+  h1.page-title svg.underline{
+    position:absolute;
+    left:0; bottom:-8px;
+    width:100%;
+    height:8px;
+  }
+  .page-desc{
+    color:#5A6B63;
+    font-size:14px;
+    margin:14px 0 26px 0;
+    max-width:60ch;
+  }
+
+  .form-card{
+    background:var(--chalk-white);
+    border:1px solid var(--grid-line);
+    border-radius:14px;
+    padding:22px;
+    margin-bottom:24px;
+  }
+  .field-row{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    flex:1;
+    min-width:150px;
+  }
+  .field label{
+    font-size:11px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--slate);
+  }
+  select, input[type=text], input[type=number]{
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    padding:10px 12px;
+    border-radius:8px;
+    border:1.5px solid #D9D4C4;
+    background:var(--paper);
+    color:var(--ink);
+  }
+  select:focus, input:focus{
+    outline:2px solid var(--brass);
+    outline-offset:1px;
+  }
+  .btn{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:11px 22px;
+    border-radius:8px;
+    border:none;
+    background:var(--brass);
+    color:#2A1C08;
+    cursor:pointer;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .btn:hover{ background:var(--brass-dim); }
+  .btn:active{ transform:scale(0.98); }
+  .btn:focus-visible{ outline:2px solid var(--slate); outline-offset:2px; }
+
+  .output{
+    background:var(--paper);
+    border:1.5px dashed var(--grid-line);
+    border-radius:14px;
+    padding:24px;
+    display:none;
+  }
+  .output.show{ display:block; animation:fade .3s ease; }
+  .output h2{
+    font-family:'Fraunces',serif;
+    font-size:19px;
+    color:var(--chalk-green);
+    margin:0 0 14px 0;
+  }
+  .output h3{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.07em;
+    color:var(--slate);
+    margin:18px 0 6px 0;
+  }
+  .output p, .output li{ font-size:14px; line-height:1.55; }
+  .output ul{ margin:4px 0; padding-left:20px; }
+  .tag{
+    display:inline-block;
+    font-size:11px;
+    font-weight:600;
+    background:var(--chalk-green);
+    color:var(--chalk-white);
+    padding:3px 9px;
+    border-radius:999px;
+    margin-right:6px;
+  }
+  .q-item{
+    border-top:1px solid var(--grid-line);
+    padding:12px 0;
+  }
+  .q-item:first-child{ border-top:none; }
+  .q-meta{ font-size:11px; color:var(--slate); font-weight:600; margin-bottom:4px; text-transform:uppercase; letter-spacing:.05em;}
+
+  /* Tutor chat */
+  .chat{
+    background:var(--chalk-white);
+    border:1px solid var(--grid-line);
+    border-radius:14px;
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+    height:440px;
+  }
+  .chat-log{
+    flex:1;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    padding-right:6px;
+  }
+  .bubble{
+    max-width:75%;
+    padding:11px 15px;
+    border-radius:14px;
+    font-size:14px;
+    line-height:1.5;
+  }
+  .bubble.tutor{
+    background:var(--paper-dim);
+    border:1px solid var(--grid-line);
+    align-self:flex-start;
+    border-bottom-left-radius:3px;
+  }
+  .bubble.student{
+    background:var(--slate);
+    color:var(--chalk-white);
+    align-self:flex-end;
+    border-bottom-right-radius:3px;
+  }
+  .chat-input-row{
+    display:flex;
+    gap:10px;
+    margin-top:14px;
+  }
+  .chat-input-row input{
+    flex:1;
+  }
+  .starter-row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .chip{
+    font-size:12px;
+    padding:6px 12px;
+    border-radius:999px;
+    border:1.5px solid var(--grid-line);
+    background:var(--paper);
+    cursor:pointer;
+    color:var(--slate);
+    font-weight:600;
+  }
+  .chip:hover{ border-color:var(--brass); color:var(--brass-dim); }
+
+  footer{
+    padding:14px 36px 26px 36px;
+    font-size:11.5px;
+    color:#94A39B;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <span class="brand-mark">Ed Agent</span>
+      <span class="brand-sub">Prototype · Math &amp; Physics · Grades 2–12</span>
+    </div>
+    <nav class="tabs">
+      <button class="tab active" data-panel="planner">Lesson Planner</button>
+      <button class="tab" data-panel="questions">Question Generator</button>
+      <button class="tab" data-panel="tutor">AI Tutor</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- LESSON PLANNER -->
+    <section class="panel active" id="panel-planner">
+      <h1 class="page-title">AI Lesson Planner
+        <svg class="underline" viewBox="0 0 200 8" preserveAspectRatio="none"><path d="M0 5 Q 50 0, 100 5 T 200 5" stroke="#C68A3D" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+      </h1>
+      <p class="page-desc">Pick a grade, subject and topic — Ed Agent drafts objectives, prerequisites, explanation, examples, activities and homework you can edit before saving.</p>
+
+      <div class="form-card">
+        <div class="field-row">
+          <div class="field">
+            <label>Grade</label>
+            <select id="p-grade"><option>Grade 7</option><option selected>Grade 9</option><option>Grade 10</option><option>Grade 11</option></select>
+          </div>
+          <div class="field">
+            <label>Subject</label>
+            <select id="p-subject"><option>Mathematics</option><option>Physics</option></select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field" style="flex:2">
+            <label>Topic</label>
+            <input type="text" id="p-topic" placeholder="e.g. Quadratic Equations, Newton's Laws of Motion" value="Quadratic Equations">
+          </div>
+          <div class="field">
+            <label>Duration (mins)</label>
+            <input type="number" id="p-duration" value="40">
+          </div>
+        </div>
+        <button class="btn" onclick="generateLesson()">Generate Lesson</button>
+      </div>
+
+      <div class="output" id="p-output"></div>
+    </section>
+
+    <!-- QUESTION GENERATOR -->
+    <section class="panel" id="panel-questions">
+      <h1 class="page-title">Question Generator
+        <svg class="underline" viewBox="0 0 200 8" preserveAspectRatio="none"><path d="M0 5 Q 50 0, 100 5 T 200 5" stroke="#C68A3D" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+      </h1>
+      <p class="page-desc">Generate a mixed set of questions for a topic, then review each one before adding it to an assessment.</p>
+
+      <div class="form-card">
+        <div class="field-row">
+          <div class="field">
+            <label>Grade</label>
+            <select id="q-grade"><option>Grade 7</option><option selected>Grade 9</option><option>Grade 10</option></select>
+          </div>
+          <div class="field">
+            <label>Subject</label>
+            <select id="q-subject"><option>Mathematics</option><option>Physics</option></select>
+          </div>
+          <div class="field">
+            <label>Difficulty</label>
+            <select id="q-difficulty"><option>Mixed</option><option>Easy</option><option>Medium</option><option>Hard</option></select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field" style="flex:2">
+            <label>Topic</label>
+            <input type="text" id="q-topic" placeholder="e.g. Quadratic Equations" value="Quadratic Equations">
+          </div>
+          <div class="field">
+            <label>How many?</label>
+            <input type="number" id="q-count" value="5" min="1" max="10">
+          </div>
+        </div>
+        <button class="btn" onclick="generateQuestions()">Generate Questions</button>
+      </div>
+
+      <div class="output" id="q-output"></div>
+    </section>
+
+    <!-- AI TUTOR -->
+    <section class="panel" id="panel-tutor">
+      <h1 class="page-title">AI Tutor
+        <svg class="underline" viewBox="0 0 200 8" preserveAspectRatio="none"><path d="M0 5 Q 50 0, 100 5 T 200 5" stroke="#C68A3D" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+      </h1>
+      <p class="page-desc">Ask about a concept or paste a problem. The tutor guides you toward the answer with questions instead of giving it away immediately.</p>
+
+      <div class="starter-row">
+        <button class="chip" onclick="starter('I don\'t understand quadratic equations')">Quadratic equations</button>
+        <button class="chip" onclick="starter('Why does a ball thrown up come back down?')">Newton's laws</button>
+        <button class="chip" onclick="starter('How do I find the area of a triangle?')">Area of a triangle</button>
+      </div>
+
+      <div class="chat">
+        <div class="chat-log" id="chat-log">
+          <div class="bubble tutor">Hi! Tell me what you're working on, or tap one of the topics above.</div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="Type your question..." onkeydown="if(event.key==='Enter') sendMessage()">
+          <button class="btn" onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Prototype for user interviews — responses are illustrative, not a live AI model.</footer>
+</div>
+
+<script>
+// ---- Tabs ----
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.panel).classList.add('active');
+  });
+});
+
+// ---- Lesson Planner ----
+const lessonBank = {
+  "quadratic": {
+    title: "Quadratic Equations",
+    objectives: ["Define a quadratic equation and identify a, b, c in ax² + bx + c = 0", "Solve quadratic equations by factoring", "Interpret the roots of a quadratic in a real-world context"],
+    prereqs: ["Linear equations", "Basic factoring of expressions", "Multiplying binomials"],
+    explanation: "A quadratic equation is any equation that can be written as ax² + bx + c = 0, where a ≠ 0. Unlike linear equations, quadratics can have zero, one, or two real solutions — the 'roots' of the equation, which are the x-values where the graph crosses the x-axis.",
+    examples: ["x² − 5x + 6 = 0 → factors to (x−2)(x−3) = 0 → x = 2 or x = 3", "A ball's height h = −5t² + 20t models when it hits the ground (h = 0)"],
+    activities: ["Pair students to factor 4 equations on whiteboards, compare methods", "Graph y = x² − 5x + 6 on graphing paper and mark where it crosses the x-axis"],
+    homework: ["Factor and solve 6 quadratic equations", "Write one real-world scenario that could be modeled by a quadratic"],
+    realworld: "Used to model projectile motion, business profit curves, and satellite dish shapes."
+  },
+  "newton": {
+    title: "Newton's Laws of Motion",
+    objectives: ["State Newton's three laws of motion", "Apply F = ma to simple problems", "Identify action-reaction pairs in everyday situations"],
+    prereqs: ["Concept of force", "Basic vectors", "Units: mass, acceleration"],
+    explanation: "Newton's First Law says an object stays at rest or in uniform motion unless acted on by a net force. The Second Law quantifies this: F = ma. The Third Law says every action has an equal and opposite reaction.",
+    examples: ["A book on a table stays still because gravity and the normal force cancel (1st law)", "Pushing a shopping cart harder accelerates it faster (2nd law: F = ma)", "A rocket expels gas downward and is pushed upward (3rd law)"],
+    activities: ["Balloon rocket demo — release an inflated balloon and discuss the reaction force", "Push objects of different mass with the same force and measure acceleration"],
+    homework: ["Identify the action-reaction pair in 5 everyday scenarios", "Calculate force needed to accelerate a 10kg cart at 2 m/s²"],
+    realworld: "Explains how rockets launch, why seatbelts matter in a crash, and how walking actually works."
+  }
+};
+function pickLesson(topic){
+  const t = topic.toLowerCase();
+  if(t.includes('quad')) return lessonBank.quadratic;
+  if(t.includes('newton') || t.includes('motion') || t.includes('force')) return lessonBank.newton;
+  // generic fallback, still shaped like a real lesson
+  return {
+    title: topic || "Untitled Topic",
+    objectives: [`Explain the core idea of ${topic}`, `Solve a basic problem involving ${topic}`, `Connect ${topic} to a real-world example`],
+    prereqs: ["Prior grade-level foundation for this chapter"],
+    explanation: `${topic} is introduced by connecting it to a concept students already know, then building the new idea step by step with worked examples.`,
+    examples: [`Worked example 1 on ${topic}`, `Worked example 2 on ${topic}, slightly harder`],
+    activities: [`Guided group practice on ${topic}`, `Quick whiteboard check for understanding`],
+    homework: [`3–5 practice problems on ${topic}`],
+    realworld: `A short note connecting ${topic} to something students encounter outside class.`
+  };
+}
+function generateLesson(){
+  const grade = document.getElementById('p-grade').value;
+  const subject = document.getElementById('p-subject').value;
+  const topic = document.getElementById('p-topic').value.trim();
+  const duration = document.getElementById('p-duration').value;
+  const L = pickLesson(topic);
+  const out = document.getElementById('p-output');
+  out.innerHTML = `
+    <span class="tag">${grade}</span><span class="tag">${subject}</span><span class="tag">${duration} min</span>
+    <h2>${L.title}</h2>
+    <h3>Learning Objectives</h3><ul>${L.objectives.map(o=>`<li>${o}</li>`).join('')}</ul>
+    <h3>Prerequisites</h3><ul>${L.prereqs.map(o=>`<li>${o}</li>`).join('')}</ul>
+    <h3>Explanation</h3><p>${L.explanation}</p>
+    <h3>Worked Examples</h3><ul>${L.examples.map(o=>`<li>${o}</li>`).join('')}</ul>
+    <h3>Class Activities</h3><ul>${L.activities.map(o=>`<li>${o}</li>`).join('')}</ul>
+    <h3>Homework</h3><ul>${L.homework.map(o=>`<li>${o}</li>`).join('')}</ul>
+    <h3>Real-World Connection</h3><p>${L.realworld}</p>
+  `;
+  out.classList.add('show');
+}
+
+// ---- Question Generator ----
+const qBank = {
+  quadratic: [
+    {type:"MCQ", text:"What are the roots of x² − 7x + 12 = 0?", meta:"Recall / Factoring"},
+    {type:"Short", text:"Explain why a quadratic equation can have at most two real roots.", meta:"Conceptual"},
+    {type:"Numerical", text:"Solve for x: 2x² − 8 = 0", meta:"Application"},
+    {type:"Long", text:"A ball is thrown with height h = −5t² + 20t + 1. Find when it hits the ground, showing all steps.", meta:"Application / Critical thinking"},
+    {type:"Conceptual", text:"How does changing the value of 'a' in ax² + bx + c affect the shape of the graph?", meta:"Conceptual"},
+    {type:"MCQ", text:"Which of the following is NOT a quadratic equation?", meta:"Recall"},
+    {type:"Short", text:"Factor x² + x − 6 and state the roots.", meta:"Application"}
+  ],
+  newton: [
+    {type:"MCQ", text:"A 5kg object accelerates at 2 m/s². What force is acting on it?", meta:"Application / F=ma"},
+    {type:"Short", text:"Give an everyday example of Newton's Third Law and identify both forces.", meta:"Conceptual"},
+    {type:"Numerical", text:"Calculate the acceleration of a 10kg cart pushed with 25N of force.", meta:"Application"},
+    {type:"Long", text:"Explain, using all three of Newton's laws, why passengers lurch forward when a bus stops suddenly.", meta:"Critical thinking"},
+    {type:"Conceptual", text:"Why does an object in space keep moving even with no one pushing it?", meta:"Conceptual"},
+    {type:"MCQ", text:"Which law explains why a rocket can accelerate in the vacuum of space?", meta:"Recall"},
+    {type:"Short", text:"A book rests on a table. Identify the two forces in equilibrium.", meta:"Application"}
+  ]
+};
+function pickBank(topic){
+  const t = topic.toLowerCase();
+  if(t.includes('quad')) return qBank.quadratic;
+  if(t.includes('newton') || t.includes('motion') || t.includes('force')) return qBank.newton;
+  return [
+    {type:"MCQ", text:`A multiple-choice question testing recall on ${topic}.`, meta:"Recall"},
+    {type:"Short", text:`Explain the key idea behind ${topic} in your own words.`, meta:"Conceptual"},
+    {type:"Numerical", text:`A numerical problem applying ${topic}.`, meta:"Application"},
+    {type:"Long", text:`A multi-step problem requiring students to apply ${topic} and justify their reasoning.`, meta:"Critical thinking"},
+    {type:"Conceptual", text:`Why does ${topic} matter beyond this chapter?`, meta:"Conceptual"}
+  ];
+}
+function generateQuestions(){
+  const grade = document.getElementById('q-grade').value;
+  const subject = document.getElementById('q-subject').value;
+  const topic = document.getElementById('q-topic').value.trim();
+  const difficulty = document.getElementById('q-difficulty').value;
+  const count = Math.max(1, Math.min(10, parseInt(document.getElementById('q-count').value) || 5));
+  const bank = pickBank(topic);
+  const chosen = [];
+  for(let i=0;i<count;i++) chosen.push(bank[i % bank.length]);
+  const out = document.getElementById('q-output');
+  out.innerHTML = `
+    <span class="tag">${grade}</span><span class="tag">${subject}</span><span class="tag">${difficulty}</span>
+    <h2>${count} Questions — ${topic || 'Topic'}</h2>
+    ${chosen.map((q,i)=>`
+      <div class="q-item">
+        <div class="q-meta">Q${i+1} · ${q.type} · ${q.meta}</div>
+        <p>${q.text}</p>
+      </div>
+    `).join('')}
+  `;
+  out.classList.add('show');
+}
+
+// ---- Tutor Chat ----
+let tutorTurn = {};
+function starter(text){
+  document.getElementById('chat-input').value = text;
+  sendMessage();
+}
+function tutorReply(topicKey, turn){
+  const scripts = {
+    quad: [
+      "Before we solve it — what does it mean for a value of x to be a 'solution' to an equation? Think about what happens when you plug it back in.",
+      "Good instinct. Now, x² − 5x + 6 = 0 — can you find two numbers that multiply to 6 and add to −5?",
+      "Exactly — −2 and −3. So how would you write x² − 5x + 6 as two brackets multiplied together?",
+      "You've got it: (x−2)(x−3) = 0. So what must be true about x for that product to equal zero?"
+    ],
+    motion: [
+      "Good question. Before I answer — what do you think is pulling the ball back down once it leaves your hand?",
+      "Right, gravity. Now, does gravity ever stop acting on the ball while it's in the air?",
+      "Exactly — it's constantly acting downward, even while the ball is still going up. So what does that do to the ball's upward speed over time?",
+      "Right — it slows it down until it's zero at the top, then speeds it up downward. That's why it comes back."
+    ],
+    triangle: [
+      "Let's build it up — do you remember the formula for the area of a rectangle?",
+      "Right, length × width. Now, if you cut a rectangle in half diagonally, what shape do you get, and how does its area compare to the rectangle's?",
+      "Exactly — half the area. So if a triangle's base and height match a rectangle's sides, what formula would that give you for the triangle?",
+      "You're there — Area = ½ × base × height. Try it on a triangle with base 8 and height 5."
+    ],
+    generic: [
+      "Good place to start. Before I explain — what part of this do you already feel confident about?",
+      "Okay, let's build from there. What do you think the first step would be?",
+      "You're close. What happens if you try that step and see where it leads?",
+      "Nice reasoning — walk me through your next step and I'll check it with you."
+    ]
+  };
+  const arr = scripts[topicKey] || scripts.generic;
+  return arr[Math.min(turn, arr.length-1)];
+}
+function detectTopic(text){
+  const t = text.toLowerCase();
+  if(t.includes('quad')) return 'quad';
+  if(t.includes('newton') || t.includes('motion') || t.includes('ball') || t.includes('force')) return 'motion';
+  if(t.includes('triangle') || t.includes('area')) return 'triangle';
+  return 'generic';
+}
+function sendMessage(){
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if(!text) return;
+  const log = document.getElementById('chat-log');
+  const studentBubble = document.createElement('div');
+  studentBubble.className = 'bubble student';
+  studentBubble.textContent = text;
+  log.appendChild(studentBubble);
+
+  const topicKey = detectTopic(text);
+  if(!(topicKey in tutorTurn)) tutorTurn[topicKey] = 0;
+  const reply = tutorReply(topicKey, tutorTurn[topicKey]);
+  tutorTurn[topicKey]++;
+
+  setTimeout(()=>{
+    const tutorBubble = document.createElement('div');
+    tutorBubble.className = 'bubble tutor';
+    tutorBubble.textContent = reply;
+    log.appendChild(tutorBubble);
+    log.scrollTop = log.scrollHeight;
+  }, 350);
+
+  input.value = '';
+  log.scrollTop = log.scrollHeight;
+}
+</script>
+</body>
+</html>
