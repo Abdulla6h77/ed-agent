@@ -1,7 +1,43 @@
 # Ed Agent — MVP
 
-Real AI-backed version of the three core flows (Lesson Planner, Question Generator, AI Tutor),
+AI-backed education platform for Pakistan's **Math & Physics curriculum (Grades 2–12)**,
 built on Next.js so it deploys straight from GitHub to Vercel with no server to manage.
+
+Three core flows, each powered by a live LLM call:
+
+| Flow | API route | What it does |
+| --- | --- | --- |
+| Lesson Planner | `POST /api/lesson-plan` | Grade + subject + topic + duration → structured lesson plan (objectives, prerequisites, worked examples, activities, homework, real-world hook) |
+| Question Generator | `POST /api/questions` | 1–10 exam-style questions (MCQ / Short / Long / Numerical / Conceptual) with skill/Bloom-level tags |
+| AI Tutor | `POST /api/tutor` | Socratic tutor — hints before answers, short grade-appropriate replies, never dumps the solution |
+
+## How the AI layer works (`lib/claude.js`)
+
+- **Dual-provider, one code path.** `callClaude()` uses Anthropic (`claude-sonnet-5`) when
+  `ANTHROPIC_API_KEY` is set, otherwise falls back to Google Gemini when `GEMINI_API_KEY` is set.
+  If both are present, Anthropic wins. The three API routes don't know or care which provider ran.
+- **Hardened JSON handling.** `parseJsonResponse()` strips markdown fences, extracts the JSON
+  object even when the model wraps it in prose, and on failure throws an error that includes the
+  first 300 chars of the raw response — a bad model output is self-explaining in the server logs.
+- **Truncation-safe budgets.** The JSON-producing routes request 2500 output tokens so large
+  payloads don't get cut off mid-object (the tutor route stays at 400 — its replies are short).
+- Keys are read server-side only and never sent to the browser.
+
+## Project structure
+
+```
+ed-agent-mvp/
+├── pages/
+│   ├── index.js              # single-page UI: Lesson Planner / Question Generator / AI Tutor tabs
+│   └── api/
+│       ├── lesson-plan.js    # POST /api/lesson-plan
+│       ├── questions.js      # POST /api/questions
+│       └── tutor.js          # POST /api/tutor
+├── lib/
+│   └── claude.js             # AI gateway: provider selection + JSON parsing
+├── styles/globals.css
+└── grading-agent/            # separate TrueForge slice — see below
+```
 
 ## 1. Get an API key
 
@@ -19,7 +55,7 @@ it's never exposed to the browser.
 ```bash
 npm install
 cp .env.example .env.local
-# edit .env.local and paste your real key
+# edit .env.local and paste ONE key (ANTHROPIC_API_KEY or GEMINI_API_KEY)
 npm run dev
 ```
 
@@ -27,23 +63,38 @@ Open http://localhost:3000
 
 ## 3. Deploy to Vercel
 
-1. Push this folder to your GitHub repo (see commands below).
+1. Push this repo to GitHub (commands below).
 2. Go to https://vercel.com → **Add New Project** → import `Abdulla6h77/ed-agent`.
-3. In **Environment Variables**, add:
-   - `ANTHROPIC_API_KEY` or `GEMINI_API_KEY` = your key (either works; Anthropic is used first if both are set)
-4. Click **Deploy**. Vercel builds and gives you a live URL
+3. **Important:** set **Root Directory** to `ed-agent-mvp` — the app lives in that subfolder,
+   not the repo root, so Vercel needs to find its `package.json` there.
+4. In **Environment Variables**, add:
+   - `ANTHROPIC_API_KEY` **or** `GEMINI_API_KEY` = your key (either works; Anthropic is used
+     first if both are set)
+5. Click **Deploy**. Vercel builds and gives you a live URL
    (e.g. `https://ed-agent.vercel.app`) in about a minute.
-5. Every future `git push` to `main` auto-redeploys.
+6. Every future `git push` to `main` auto-redeploys.
 
-## Pushing this to your repo
+## 4. Homework Grading Agent (TrueForge slice)
+
+`grading-agent/` is a separate, self-contained demo built on the TrueForge agent harness
+(https://trueforge.dev): an agent that grades a student's homework answer by calling a real
+MCP tool (`get_rubric`), verifies numerical answers by **running code in a sandbox**, and
+records the final grade through `finalize_grade` — a tool that **pauses for human
+approval** before it actually runs.
+
+It has its own MCP server and agent spec and shares no code with the Next.js app.
+Setup, run, and test instructions: [`grading-agent/README.md`](grading-agent/README.md).
+
+## Pushing to GitHub
 
 ```bash
-cd ed-agent          # your cloned repo
-# copy all the files from this project into the repo root
 git add .
-git commit -m "Real MVP: Next.js app with live AI for lesson planner, question generator, tutor"
+git commit -m "Ed Agent MVP: Next.js app (dual-provider AI) + TrueForge grading agent"
 git push origin main
 ```
+
+Run these from the repo root. `.env.local` and `node_modules/` are gitignored and will not
+be committed — double-check with `git status` before committing.
 
 ## What's still mocked / simplified vs the full blueprint
 
