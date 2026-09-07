@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 
 export default function Home() {
@@ -7,7 +8,7 @@ export default function Home() {
       <header>
         <div className="brand">
           <span className="brand-mark">Ed Agent</span>
-          <span className="brand-sub">MVP · Math &amp; Physics · Grades 2–12</span>
+          <span className="brand-sub">MVP · Math &amp; Physics · Grades 7–11</span>
         </div>
         <div className="hero-strip">
           <h2>Your AI teaching assistant</h2>
@@ -27,6 +28,7 @@ export default function Home() {
               {label}
             </button>
           ))}
+          <Link className="tab" href="/grading-agent">Grading Agent ↗</Link>
         </nav>
       </header>
       <main>
@@ -121,6 +123,9 @@ function LessonPlanner() {
       {lesson && !loading && (
         <div className="output show">
           <span className="tag">{grade}</span><span className="tag">{subject}</span><span className="tag">{duration} min</span>
+          {lesson.grounded
+            ? <span className="tag tag-grounded">✓ Grounded in curriculum</span>
+            : <span className="tag tag-ungrounded">⚠ Not in curriculum DB — general knowledge</span>}
           <h2>{lesson.title}</h2>
           <h3>Learning Objectives</h3><ul>{lesson.objectives?.map((o, i) => <li key={i}>{o}</li>)}</ul>
           <h3>Prerequisites</h3><ul>{lesson.prerequisites?.map((o, i) => <li key={i}>{o}</li>)}</ul>
@@ -220,6 +225,11 @@ function QuestionGenerator() {
       {questions && questions.length > 0 && !loading && (
         <div className="output show">
           <span className="tag">{grade}</span><span className="tag">{subject}</span><span className="tag">{difficulty}</span>
+          {questions.grounded !== undefined && (
+            questions.grounded
+              ? <span className="tag tag-grounded">✓ Grounded in curriculum</span>
+              : <span className="tag tag-ungrounded">⚠ Not in curriculum DB — general knowledge</span>
+          )}
           <h2>{questions.length} Questions — {topic}</h2>
           {questions.map((q, i) => (
             <div className="q-item" key={i}>
@@ -343,9 +353,8 @@ function AppFooter() {
         <strong>Ed Agent — AI for better teaching</strong>
       </div>
       <nav className="app-footer-links">
-        <a href="/privacy">Privacy</a>
-        <a href="/terms">Terms</a>
-        <a href="/contact">Contact</a>
+        <a href="/grading-agent">Grading Agent</a>
+        <a href="https://github.com/Abdulla6h77/ed-agent" target="_blank" rel="noreferrer">GitHub</a>
       </nav>
     </footer>
   );

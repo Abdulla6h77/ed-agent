@@ -95,7 +95,7 @@ export default function GradingAgent() {
 
         <aside className="grading-boundary" aria-label="Static page boundary">
           <h2>Static overview only</h2>
-          <p>The local files define one grading agent, a rubric MCP tool, and configured sandbox verification. They do not document an orchestrator, a grading subagent, or a human final-grade approval checkpoint.</p>
+          <p>The local files define one grading agent, a rubric MCP tool, sandbox-verified numerical checks, and a human final-grade approval checkpoint — the finalize_grade tool pauses for an Allow / Deny decision before anything is recorded. This page is an overview only: the agent itself runs locally under TrueForge, not in this browser app.</p>
         </aside>
       </main>
 
@@ -119,9 +119,7 @@ function AppFooter() {
         <strong>Ed Agent — AI for better teaching</strong>
       </div>
       <nav className="app-footer-links">
-        <a href="/privacy">Privacy</a>
-        <a href="/terms">Terms</a>
-        <a href="/contact">Contact</a>
+        <a href="https://github.com/Abdulla6h77/ed-agent" target="_blank" rel="noreferrer">GitHub</a>
       </nav>
     </footer>
   );

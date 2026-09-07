@@ -262,3 +262,22 @@ button:focus-visible, select:focus-visible, input:focus-visible{ outline:2px sol
   .app-footer{ flex-direction:column; align-items:flex-start; padding:20px 20px 24px; margin-top:32px; }
   .app-footer-links{ flex-wrap:wrap; gap:16px; }
 }
+
+
+/* Result badges — curriculum grounding status */
+.tag.tag-grounded {
+  background: rgba(30, 59, 50, 0.08);
+  color: #1E3B32;
+  border: 1px solid rgba(30, 59, 50, 0.3);
+}
+
+.tag.tag-ungrounded {
+  background: rgba(198, 138, 61, 0.12);
+  color: #8A5A20;
+  border: 1px solid rgba(198, 138, 61, 0.4);
+}
+
+/* Preserve paragraph breaks in tutor chat bubbles */
+.bubble {
+  white-space: pre-wrap;
+}
