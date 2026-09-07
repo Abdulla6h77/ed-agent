@@ -9,6 +9,10 @@ export default function Home() {
           <span className="brand-mark">Ed Agent</span>
           <span className="brand-sub">MVP · Math &amp; Physics · Grades 2–12</span>
         </div>
+        <div className="hero-strip">
+          <h2>Your AI teaching assistant</h2>
+          <p>Ed Agent helps teachers plan lessons, generate questions, and tutor students — powered by AI, grounded in curriculum.</p>
+        </div>
         <nav className="tabs">
           {[
             ["planner", "Lesson Planner"],
@@ -17,7 +21,7 @@ export default function Home() {
           ].map(([key, label]) => (
             <button
               key={key}
-              className={"tab" + (tab === key ? " active" : "")}
+              className={`tab${tab === key ? " active" : ""}`}
               onClick={() => setTab(key)}
             >
               {label}
@@ -26,11 +30,13 @@ export default function Home() {
         </nav>
       </header>
       <main>
-        {tab === "planner" && <LessonPlanner />}
-        {tab === "questions" && <QuestionGenerator />}
-        {tab === "tutor" && <Tutor />}
+        <div className="tab-content tab-enter" key={tab}>
+          {tab === "planner" && <LessonPlanner />}
+          {tab === "questions" && <QuestionGenerator />}
+          {tab === "tutor" && <Tutor />}
+        </div>
       </main>
-      <footer>Ed Agent MVP — live AI responses. Always human-reviewed before classroom use.</footer>
+      <AppFooter />
     </div>
   );
 }
@@ -99,11 +105,20 @@ function LessonPlanner() {
           </Field>
         </div>
         <button type="button" className="btn" onClick={generate} disabled={loading}>
+          {loading && <svg className="spinner-svg" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" strokeOpacity="0.3" strokeWidth="2.5" /><path d="M14 8a6 6 0 0 0-6-6" stroke="var(--chalk-green)" strokeWidth="2.5" strokeLinecap="round" /></svg>}
           {loading ? "Generating…" : "Generate Lesson"}
         </button>
       </div>
-      {error && <StatusNotice title="Unable to generate a lesson" message={error} onRetry={generate} />}
-      {lesson && (
+      {loading && (
+        <div className="skeleton" aria-hidden="true">
+          <div className="skeleton-bar skeleton-heading" />
+          <div className="skeleton-group"><div className="skeleton-bar skeleton-label" /><div className="skeleton-bar skeleton-line w80" /><div className="skeleton-bar skeleton-line w65" /><div className="skeleton-bar skeleton-line w90" /></div>
+          <div className="skeleton-group"><div className="skeleton-bar skeleton-label" /><div className="skeleton-bar skeleton-line w75" /><div className="skeleton-bar skeleton-line w50" /></div>
+          <div className="skeleton-group"><div className="skeleton-bar skeleton-label" /><div className="skeleton-bar skeleton-line w90" /><div className="skeleton-bar skeleton-line w80" /><div className="skeleton-bar skeleton-line w65" /></div>
+        </div>
+      )}
+      {error && !loading && <StatusNotice title="Unable to generate a lesson" message={error} onRetry={generate} />}
+      {lesson && !loading && (
         <div className="output show">
           <span className="tag">{grade}</span><span className="tag">{subject}</span><span className="tag">{duration} min</span>
           <h2>{lesson.title}</h2>
@@ -182,14 +197,27 @@ function QuestionGenerator() {
           </Field>
         </div>
         <button type="button" className="btn" onClick={generate} disabled={loading}>
+          {loading && <svg className="spinner-svg" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" strokeOpacity="0.3" strokeWidth="2.5" /><path d="M14 8a6 6 0 0 0-6-6" stroke="var(--chalk-green)" strokeWidth="2.5" strokeLinecap="round" /></svg>}
           {loading ? "Generating…" : "Generate Questions"}
         </button>
       </div>
-      {error && <StatusNotice title="Unable to generate questions" message={error} onRetry={generate} />}
-      {questions && questions.length === 0 && (
+      {loading && (
+        <div className="skeleton" aria-hidden="true">
+          <div className="skeleton-bar skeleton-heading" />
+          {[1,2,3].map((n) => (
+            <div className="skeleton-group" key={n}>
+              <div className="skeleton-bar skeleton-label" />
+              <div className="skeleton-bar skeleton-line w90" />
+              <div className="skeleton-bar skeleton-line w75" />
+            </div>
+          ))}
+        </div>
+      )}
+      {error && !loading && <StatusNotice title="Unable to generate questions" message={error} onRetry={generate} />}
+      {questions && questions.length === 0 && !loading && (
         <StatusNotice kind="empty" title="No questions generated" message="Try changing the topic or generating the set again." />
       )}
-      {questions && questions.length > 0 && (
+      {questions && questions.length > 0 && !loading && (
         <div className="output show">
           <span className="tag">{grade}</span><span className="tag">{subject}</span><span className="tag">{difficulty}</span>
           <h2>{questions.length} Questions — {topic}</h2>
@@ -259,7 +287,7 @@ function Tutor() {
           {history.map((m, i) => (
             <div key={i} className={"bubble " + (m.role === "user" ? "student" : "tutor")}>{m.content}</div>
           ))}
-          {loading && <div className="bubble tutor" aria-label="Tutor is responding">…</div>}
+          {loading && <div className="bubble tutor" aria-label="Tutor is responding"><TypingIndicator /></div>}
         </div>
         {error && <StatusNotice className="chat-notice" title="Unable to reach the tutor" message={error} onRetry={() => send(failedMessage, true)} />}
         <div className="chat-input-row">
@@ -295,5 +323,30 @@ function Field({ label, wide, children }) {
       <label>{label}</label>
       {children}
     </div>
+  );
+}
+
+function TypingIndicator() {
+  return (
+    <span className="typing-dots" aria-label="typing">
+      <span className="typing-dot" />
+      <span className="typing-dot" />
+      <span className="typing-dot" />
+    </span>
+  );
+}
+
+function AppFooter() {
+  return (
+    <footer className="app-footer">
+      <div className="app-footer-brand">
+        <strong>Ed Agent — AI for better teaching</strong>
+      </div>
+      <nav className="app-footer-links">
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/contact">Contact</a>
+      </nav>
+    </footer>
   );
 }

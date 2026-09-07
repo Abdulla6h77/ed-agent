@@ -1,0 +1,187 @@
+{
+  "curriculum": [
+    {
+      "grade": "Grade 9",
+      "subject": "Mathematics",
+      "topic": "Quadratic Equations",
+      "learning_objectives": [
+        "Solve quadratic equations of the form ax^2 + bx + c = 0 by factorization, including splitting the middle term",
+        "Solve quadratic equations using the quadratic formula x = (-b ± sqrt(b^2 - 4ac)) / (2a)",
+        "Determine the nature of roots using the discriminant b^2 - 4ac",
+        "Relate the roots of a quadratic equation to the x-intercepts of its graph",
+        "Verify candidate solutions by substituting them back into the original equation"
+      ],
+      "prerequisites": [
+        "Linear equations in one variable",
+        "Factorization of quadratic expressions",
+        "Square roots and perfect squares"
+      ],
+      "key_concepts": [
+        "Standard form ax^2 + bx + c = 0 with a != 0",
+        "The discriminant b^2 - 4ac determines whether roots are real, equal, or complex",
+        "Sum and product of roots relationships",
+        "Roots of the equation correspond to the x-intercepts of its parabola"
+      ]
+    },
+    {
+      "grade": "Grade 9",
+      "subject": "Mathematics",
+      "topic": "Linear Equations",
+      "learning_objectives": [
+        "Solve linear equations in one variable",
+        "Solve linear inequalities and represent their solutions on a number line",
+        "Translate word problems into linear equations and solve them",
+        "Verify solutions by substituting them back into the original equation"
+      ],
+      "prerequisites": [
+        "Arithmetic operations with integers and rational numbers",
+        "Collecting like terms and basic algebraic manipulation"
+      ],
+      "key_concepts": [
+        "A linear equation has degree 1 and at most one solution",
+        "Balance property: applying the same operation to both sides preserves equality",
+        "The direction of an inequality flips when multiplying or dividing by a negative number",
+        "Representing solution sets on a number line"
+      ]
+    },
+    {
+      "grade": "Grade 9",
+      "subject": "Mathematics",
+      "topic": "Factorization",
+      "learning_objectives": [
+        "Factorize algebraic expressions by taking out the highest common factor (HCF)",
+        "Factorize quadratic expressions by splitting the middle term",
+        "Use identities such as a^2 - b^2 = (a - b)(a + b) to factorize expressions",
+        "Factorize expressions by grouping terms"
+      ],
+      "prerequisites": [
+        "HCF of algebraic terms",
+        "Algebraic identities: square of a sum, square of a difference, difference of squares",
+        "Multiplication of polynomials"
+      ],
+      "key_concepts": [
+        "HCF factorization",
+        "Splitting the middle term of a quadratic expression",
+        "Difference of squares a^2 - b^2 = (a - b)(a + b)",
+        "Perfect square trinomials a^2 ± 2ab + b^2",
+        "Factorization by grouping"
+      ]
+    },
+    {
+      "grade": "Grade 9",
+      "subject": "Mathematics",
+      "topic": "Coordinate Geometry",
+      "learning_objectives": [
+        "Plot points on the Cartesian plane and identify the quadrant of a point",
+        "Calculate the distance between two points using the distance formula",
+        "Find the midpoint of a line segment using the midpoint formula",
+        "Calculate and interpret the slope (gradient) of a line"
+      ],
+      "prerequisites": [
+        "Cartesian plane basics: axes, ordered pairs, quadrants",
+        "Square roots",
+        "Linear equations"
+      ],
+      "key_concepts": [
+        "Distance formula: sqrt((x2 - x1)^2 + (y2 - y1)^2)",
+        "Midpoint formula: ((x1 + x2)/2, (y1 + y2)/2)",
+        "Gradient m = (y2 - y1) / (x2 - x1)",
+        "Signs of coordinates in the four quadrants"
+      ]
+    },
+    {
+      "grade": "Grade 10",
+      "subject": "Mathematics",
+      "topic": "Trigonometry",
+      "learning_objectives": [
+        "Define the trigonometric ratios sine, cosine, and tangent for a right triangle",
+        "Recall and use the trigonometric ratios of special angles (0°, 30°, 45°, 60°, 90°)",
+        "Prove and apply the fundamental identity sin^2θ + cos^2θ = 1",
+        "Solve right triangles using trigonometric ratios",
+        "Solve real-life problems involving angles of elevation and depression"
+      ],
+      "prerequisites": [
+        "Right triangles and the Pythagorean theorem",
+        "Ratio and proportion",
+        "Similar triangles"
+      ],
+      "key_concepts": [
+        "SOH-CAH-TOA definitions of the ratios",
+        "Special-angle values of sine, cosine, and tangent",
+        "Fundamental identity sin^2θ + cos^2θ = 1",
+        "Angles of elevation and depression"
+      ]
+    },
+    {
+      "grade": "Grade 9",
+      "subject": "Physics",
+      "topic": "Newton's Laws of Motion",
+      "learning_objectives": [
+        "State Newton's three laws of motion and identify them in everyday situations",
+        "Apply F = ma to solve numerical problems",
+        "Distinguish between mass and weight, using w = mg",
+        "Draw and interpret free-body diagrams",
+        "Solve problems using consistent SI units"
+      ],
+      "prerequisites": [
+        "Kinematics: speed, velocity, and acceleration",
+        "Force as a vector quantity",
+        "SI units: newton, kilogram"
+      ],
+      "key_concepts": [
+        "First law (inertia): with no net force, an object's motion does not change",
+        "Second law: net force equals mass times acceleration (F = ma)",
+        "Third law: action-reaction pairs act on different bodies",
+        "Mass (kg) versus weight (N), where weight = mg",
+        "Free-body diagrams and net force"
+      ]
+    },
+    {
+      "grade": "Grade 9",
+      "subject": "Physics",
+      "topic": "Work & Energy",
+      "learning_objectives": [
+        "Calculate work done by a constant force using W = F·d·cos θ",
+        "Calculate kinetic energy (KE = ½mv^2) and gravitational potential energy (PE = mgh)",
+        "State and apply the work-energy theorem",
+        "Apply conservation of energy to mechanical problems",
+        "Calculate power as the rate of doing work (P = W/t)"
+      ],
+      "prerequisites": [
+        "Newton's laws of motion",
+        "Basic vector concepts and force direction",
+        "SI units: joule and watt"
+      ],
+      "key_concepts": [
+        "Work = force × displacement in the direction of the force, measured in joules",
+        "Kinetic energy KE = ½mv^2",
+        "Gravitational potential energy PE = mgh",
+        "Work-energy theorem: net work equals the change in kinetic energy",
+        "Conservation of mechanical energy",
+        "Power = work per unit time, measured in watts"
+      ]
+    },
+    {
+      "grade": "Grade 10",
+      "subject": "Physics",
+      "topic": "Circular Motion",
+      "learning_objectives": [
+        "Describe uniform circular motion and identify centripetal acceleration",
+        "Relate linear speed, radius, and time period using v = 2πr/T",
+        "Apply the centripetal force relation F = mv^2/r",
+        "Explain everyday examples of centripetal force (vehicles on curves, satellites in orbit)"
+      ],
+      "prerequisites": [
+        "Newton's laws of motion",
+        "Speed, velocity, and acceleration",
+        "Time period and frequency"
+      ],
+      "key_concepts": [
+        "Centripetal acceleration a = v^2/r, always directed toward the center",
+        "Centripetal force F = mv^2/r",
+        "Relation between linear speed and time period: v = 2πr/T",
+        "What supplies the centripetal force: tension, friction, or gravity depending on the situation"
+      ]
+    }
+  ]
+}

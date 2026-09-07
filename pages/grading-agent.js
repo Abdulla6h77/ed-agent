@@ -99,7 +99,7 @@ export default function GradingAgent() {
         </aside>
       </main>
 
-      <footer>Ed Agent MVP — static overview only. No live TrueForge or MCP connection.</footer>
+      <AppFooter />
     </div>
   );
 }
@@ -109,5 +109,20 @@ function Underline() {
     <svg className="underline" viewBox="0 0 200 8" preserveAspectRatio="none" aria-hidden="true">
       <path d="M0 5 Q 50 0, 100 5 T 200 5" stroke="#C68A3D" strokeWidth="3" fill="none" strokeLinecap="round" />
     </svg>
+  );
+}
+
+function AppFooter() {
+  return (
+    <footer className="app-footer">
+      <div className="app-footer-brand">
+        <strong>Ed Agent — AI for better teaching</strong>
+      </div>
+      <nav className="app-footer-links">
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/contact">Contact</a>
+      </nav>
+    </footer>
   );
 }

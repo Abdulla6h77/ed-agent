@@ -100,7 +100,9 @@ be committed — double-check with `git status` before committing.
 
 - No database yet — nothing is saved between sessions (no learning profiles, no saved lessons).
 - No auth — anyone with the URL can use it. Fine for interviews, not for a real pilot.
-- No curriculum/RAG grounding yet — the model relies on its own knowledge, not your ingested
-  curriculum documents. Add this once you validate the flows are useful (blueprint Section 11).
+- Partial curriculum grounding — Lesson Planner and Question Generator ground their output in
+  `data/curriculum.json` for the topics listed there (responses carry a `"grounded"` flag);
+  other topics fall back to model knowledge and are flagged `"grounded": false`. No RAG or
+  vector search yet (blueprint Section 11).
 - Single AI call per action — no real Orchestrator/multi-agent routing yet. That's intentional:
   prove each flow works before adding orchestration complexity.
