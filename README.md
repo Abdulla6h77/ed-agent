@@ -13,14 +13,26 @@ Three core flows, each powered by a live LLM call:
 
 ## How the AI layer works (`lib/claude.js`)
 
-- **Dual-provider, one code path.** `callClaude()` uses Anthropic (`claude-sonnet-5`) when
-  `ANTHROPIC_API_KEY` is set, otherwise falls back to Google Gemini when `GEMINI_API_KEY` is set.
-  If both are present, Anthropic wins. The three API routes don't know or care which provider ran.
+- **Three providers, one code path.** `callClaude()` tries DashScope (Alibaba Cloud) →
+  Anthropic (`claude-sonnet-5`) → Google Gemini, skipping any provider whose key is unset.
+  The first configured key wins, or set `AI_PROVIDER=dashscope|anthropic|gemini` to pin one.
+  The three API routes don't know or care which provider ran.
 - **Hardened JSON handling.** `parseJsonResponse()` strips markdown fences, extracts the JSON
   object even when the model wraps it in prose, and on failure throws an error that includes the
   first 300 chars of the raw response — a bad model output is self-explaining in the server logs.
+- **Reliability: retry with backoff.** Providers intermittently return `429`/`503` ("high
+  demand"). Transient failures are retried up to 5 times with exponential backoff — harder
+  backoff on `429`, since hammering a throttled key only extends the penalty.
+- **Reliability: Gemini model failover.** Gemini's free tier is a quota of requests *per model*,
+  so when the primary model hits its quota wall the request automatically fails over to the next
+  model instead of erroring out.
+- **No reasoning leaks.** Some Gemini models emit internal reasoning as separate parts flagged
+  `thought: true`; only non-thought parts are ever returned. `thinkingLevel: "low"` also reduces
+  the reasoning tokens that count against the output budget.
+- **JSON is opt-in** (`jsonMode`) so only the JSON-producing routes force
+  `responseMimeType: "application/json"` — the Tutor must answer in plain conversational text.
 - **Truncation-safe budgets.** The JSON-producing routes request 2500 output tokens so large
-  payloads don't get cut off mid-object (the tutor route stays at 400 — its replies are short).
+  payloads don't get cut off mid-object (the tutor route stays at 800 — its replies are short).
 - Keys are read server-side only and never sent to the browser.
 
 ## Project structure
@@ -41,14 +53,24 @@ ed-agent-mvp/
 
 ## 1. Get an API key
 
-Ed Agent needs one AI provider key — either works:
+Ed Agent needs **at least one** AI provider key — any of these work:
 
-- Anthropic: sign up at https://console.anthropic.com and create an API key.
-- Google Gemini: get a key at https://aistudio.google.com/apikey.
+- **DashScope (Alibaba Cloud Model Studio):** sign up at https://bailian.console.alibabacloud.com/.
+  Use the **OpenAI-compatible** endpoint. Set:
+  ```
+  DASHSCOPE_API_KEY=sk-...
+  DASHSCOPE_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+  DASHSCOPE_MODEL=qwen-plus
+  ```
+  ⚠️ The base URL **must** end in `/compatible-mode/v1`. The `ws-gw*.maas.aliyuncs.com/api/v1`
+  gateway you see in some workspaces returns a bare `404`, which shows up in the terminal as
+  `DashScope API error (404)` followed by a silent fall-through to the next provider.
+- **Anthropic:** https://console.anthropic.com
+- **Google Gemini:** https://aistudio.google.com/apikey
 
-Set it as `ANTHROPIC_API_KEY` or `GEMINI_API_KEY` in `.env.local` (see `.env.example`).
-If both are present, Anthropic is used first. The key is used server-side only —
-it's never exposed to the browser.
+Put the key(s) in `.env.local` (see `.env.example`). Setting more than one makes the app more
+reliable — if one provider is rate-limited or out of quota, the next one takes over
+automatically. Keys are used server-side only and never exposed to the browser.
 
 ## 2. Run locally (optional, to test before deploying)
 
@@ -67,12 +89,41 @@ Open http://localhost:3000
 2. Go to https://vercel.com → **Add New Project** → import `Abdulla6h77/ed-agent`.
 3. **Important:** set **Root Directory** to `ed-agent-mvp` — the app lives in that subfolder,
    not the repo root, so Vercel needs to find its `package.json` there.
-4. In **Environment Variables**, add:
-   - `ANTHROPIC_API_KEY` **or** `GEMINI_API_KEY` = your key (either works; Anthropic is used
-     first if both are set)
+4. In **Environment Variables**, add at least one provider:
+   - **DashScope:** `DASHSCOPE_API_KEY` **and** `DASHSCOPE_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1`
+     (optional: `DASHSCOPE_MODEL`)
+   - **Anthropic:** `ANTHROPIC_API_KEY`
+   - **Google Gemini:** `GEMINI_API_KEY`
+
+   Configuring more than one is recommended — the app fails over automatically when one is
+   throttled. Keys are scoped per environment (Production / Preview / Development), so paste
+   the same value into each environment you need.
+
+   > Set these **before** the first deploy if you can. If the deploy runs without a key, the
+   > build still succeeds but every AI route returns `500` until you redeploy — see below.
+
 5. Click **Deploy**. Vercel builds and gives you a live URL
    (e.g. `https://ed-agent.vercel.app`) in about a minute.
 6. Every future `git push` to `main` auto-redeploys.
+
+### Editing env vars later
+
+Vercel applies environment variables **only to new builds** — editing a value does not change
+the currently-live deployment. After saving a change, go to **Deployments → ⋯ → Redeploy**
+(or push an empty commit) for it to take effect. This trips up most people: the value looks
+saved in the dashboard but the site still uses the old key.
+
+### Which order for a first deploy?
+
+**Push first, then add the env vars, then redeploy.** This is the expected path:
+
+1. `git push origin main` → Vercel picks it up and builds (fails at runtime, not build time).
+2. Add the env vars in the dashboard.
+3. **Deployments → ⋯ → Redeploy** to bake them in.
+
+If you prefer to avoid the failed first deploy entirely, create the Vercel project and set
+the env vars *first*, then connect the repo — Vercel will build once with the keys already in
+place.
 
 ## 4. Homework Grading Agent (TrueForge slice)
 
@@ -84,6 +135,15 @@ approval** before it actually runs.
 
 It has its own MCP server and agent spec and shares no code with the Next.js app.
 Setup, run, and test instructions: [`grading-agent/README.md`](grading-agent/README.md).
+
+---
+
+## 📘 New here?
+
+Full clone → configure → run → demo instructions live in
+**[`SETUP-GUIDE.md`](SETUP-GUIDE.md)**. It covers WSL setup, provider keys (including the
+DashScope base-URL gotcha), health checks, the demo script, troubleshooting and cleanup.
+
 
 ## Pushing to GitHub
 

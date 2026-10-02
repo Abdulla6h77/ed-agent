@@ -15,36 +15,60 @@ check for numerical answers.
 | `package.json` | Node deps for the MCP server. |
 | `agent.json` | TrueForge agent spec: Grading Agent, attaches the `rubric` connector, sandbox on (code-execution verification of numerical answers), `finalize_grade` requires human approval. |
 
-## 1. Install & run TrueForge (local mode)
+## 1. Prerequisites
 
-Requires Node.js 22.14+. In a terminal:
-
-```bash
-npx @truefoundry/trueforge@latest
-```
-
-Open http://localhost:8790. You should see the chat UI.
-
-## 2. Add the Anthropic model provider
-
-1. In TrueForge: **Settings → Models**.
-2. Find **Anthropic** in the catalog, click **Configure**, paste your API key, click **Create**.
-3. Models from Anthropic become available immediately.
-
-(If you were given the key as an env var, paste its value into the box above —
-TrueForge stores provider credentials in Settings, not in agent files.)
-
-## 3. Start the rubric MCP server
-
-In a **second terminal**, from this folder:
+**Node.js 22.14+** and **WSL2**. Both services must run inside WSL in the *same* network
+namespace — TrueForge (in WSL) cannot reach an MCP server listening on Windows `localhost`.
 
 ```bash
-cd grading-agent
-npm install
-npm start
+# inside WSL
+source ~/.nvm/nvm.sh
+node -v   # must print v22.14.0 or newer
 ```
 
-It serves the MCP at `http://localhost:8941/mcp` and prints a confirmation line.
+## 2. Configure a model provider
+
+TrueForge stores provider keys in **its own settings**, not in the app's `.env.local`:
+
+1. Start TrueForge once (step 3).
+2. **Settings → Models** → pick a provider (Alibaba / Anthropic / Google) → **Configure**.
+3. Paste the key → **Create**.
+
+Check what got configured:
+
+```bash
+curl -s http://localhost:8790/api/v1/settings/model-providers
+```
+
+> `agent.json` currently pins `alibaba/qwen3-7-flash`. If you configured a different
+> provider, change `model.name` to an FQN you actually created (format
+> `<provider>/<model-name>`, e.g. `alibaba/qwen3-7-flash`), then push the update:
+> `PUT /api/v1/agents/<id>` with **only** `{ "manifest": ... }` — `name` is immutable.
+
+## 3. Start both services
+
+Two scripts handle nvm, proxy cleanup and the localhost allow-list. Run each in its own
+PowerShell terminal:
+
+```powershell
+# terminal 1 — MCP server on :8941
+wsl -e bash /mnt/d/project/ED-AGENT/ed-agent-mvp/grading-agent/start-mcp.sh
+
+# terminal 2 — TrueForge on :8790
+wsl -e bash /mnt/d/project/ED-AGENT/ed-agent-mvp/grading-agent/start-trueforge.sh
+```
+
+Both detach, so closing the terminal does not kill them. Logs are at `~/rubric-mcp.log`
+and `~/trueforge.log` inside WSL.
+
+Health-check:
+
+```bash
+curl -s http://localhost:8790/api/v1/agents
+```
+
+> A `GET /mcp` returning **404 is expected** — MCP only answers `POST`. Use the
+> handshake or the connector endpoint in step 4 to confirm it is really up.
 
 ## 4. Register the MCP server in TrueForge
 
@@ -54,20 +78,25 @@ It serves the MCP at `http://localhost:8941/mcp` and prints a confirmation line.
 4. Auth: none.
 5. Save. It should move to **Configured**.
 
+Verify TrueForge can actually reach it — this lists both tools:
+
+```bash
+curl -s http://localhost:8790/api/v1/mcp-servers/rubric/tools
+```
+
+You should see `get_rubric` and `finalize_grade`. If this errors, TrueForge's
+outbound-network guard blocked the call — make sure you started it with
+`start-trueforge.sh`, which sets `OUTBOUND_URL_ALLOWED_HOSTS=["localhost","127.0.0.1"]`.
+
 ## 5. Create the Grading Agent
 
-Either paste `agent.json` via the UI (Create Agent → paste spec), or POST it:
+Either paste `agent.json` in the UI (Agents → Create → paste spec), or POST it:
 
 ```bash
 curl -X POST http://localhost:8790/api/v1/agents \
   -H 'content-type: application/json' \
-  -d "{\"name\":\"edagent-grading\",\"manifest\":$(cat agent.json)}"
+  -d "$(jq -n --slurpfile m agent.json '{name:"grading-agent",manifest:$m[0].manifest}')"
 ```
-
-Then open a session with it (Agents Library → Try, or just chat with it).
-
-> The `model.name` in `agent.json` is `anthropic/claude-sonnet-4-6`. Change it in
-> the UI if your configured Anthropic model has a different FQN.
 
 ## 6. Test it (the judged requirement)
 
