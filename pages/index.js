@@ -1,8 +1,35 @@
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
+import { readStore, writeStore, clearStore } from "../lib/storage";
+
+// Option lists for the Question Generator's dropdowns. Kept here (rather than inline)
+// because a lesson plan handed off from the Lesson Planner can only be applied to the
+// form when its grade/subject actually exist as options — Lesson Planner offers
+// Grade 7-11, and this list stops at Grade 10, so a Grade 11 lesson must not clobber
+// the field with a value the select cannot display.
+const QGEN_GRADES = ["Grade 7", "Grade 8", "Grade 9", "Grade 10"];
+const QGEN_SUBJECTS = ["Mathematics", "Physics"];
+
+// Key used to hand a freshly generated lesson from the Lesson Planner to the
+// Question Generator. Cleared on read so it only ever fires once.
+const HANDOFF_KEY = "handoff:lesson";
 
 export default function Home() {
   const [tab, setTab] = useState("planner");
+  // Gate writes until the cached tab has been read back, otherwise the persist effect
+  // would run on mount and overwrite the stored value before it is restored.
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const saved = readStore("tab", null);
+    if (saved === "planner" || saved === "questions" || saved === "tutor") setTab(saved);
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (hydrated) writeStore("tab", tab);
+  }, [tab, hydrated]);
+
   return (
     <div className="app">
       <header>
@@ -33,7 +60,7 @@ export default function Home() {
       </header>
       <main>
         <div className="tab-content tab-enter" key={tab}>
-          {tab === "planner" && <LessonPlanner />}
+          {tab === "planner" && <LessonPlanner onGoToQuestions={() => setTab("questions")} />}
           {tab === "questions" && <QuestionGenerator />}
           {tab === "tutor" && <Tutor />}
         </div>
@@ -51,7 +78,7 @@ function Underline() {
   );
 }
 
-function LessonPlanner() {
+function LessonPlanner({ onGoToQuestions }) {
   const [grade, setGrade] = useState("Grade 9");
   const [subject, setSubject] = useState("Mathematics");
   const [topic, setTopic] = useState("Quadratic Equations");
@@ -59,6 +86,17 @@ function LessonPlanner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [lesson, setLesson] = useState(null);
+
+  // Restore the last generated plan on mount. Reading in an effect (not during
+  // render) keeps it safe from server-side rendering, where localStorage is absent.
+  useEffect(() => {
+    const cached = readStore("lesson", null);
+    if (cached) setLesson(cached);
+  }, []);
+
+  useEffect(() => {
+    if (lesson) writeStore("lesson", lesson);
+  }, [lesson]);
 
   async function generate() {
     setLoading(true);
@@ -78,6 +116,13 @@ function LessonPlanner() {
     } finally {
       setLoading(false);
     }
+  }
+
+  // Hand the plan to the Question Generator. The inputs travel with it because the
+  // lesson API response doesn't echo back grade/subject/topic.
+  function handOffToQuestions() {
+    writeStore(HANDOFF_KEY, { grade, subject, topic, lesson });
+    onGoToQuestions();
   }
 
   return (
@@ -134,6 +179,14 @@ function LessonPlanner() {
           <h3>Class Activities</h3><ul>{lesson.activities?.map((o, i) => <li key={i}>{o}</li>)}</ul>
           <h3>Homework</h3><ul>{lesson.homework?.map((o, i) => <li key={i}>{o}</li>)}</ul>
           <h3>Real-World Connection</h3><p>{lesson.realworld}</p>
+          <div className="lesson-actions">
+            <button type="button" className="btn btn-soft" onClick={handOffToQuestions}>
+              Generate questions from this plan →
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={() => setLesson(null)}>
+              Clear
+            </button>
+          </div>
         </div>
       )}
     </section>
@@ -149,16 +202,65 @@ function QuestionGenerator() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [questions, setQuestions] = useState(null);
+  // The lesson plan these questions are being derived from, if any.
+  const [lesson, setLesson] = useState(null);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Restore the last session's form, result and any pending lesson handoff.
+  useEffect(() => {
+    const form = readStore("questions:form", null);
+    if (form) {
+      if (form.grade) setGrade(form.grade);
+      if (form.subject) setSubject(form.subject);
+      if (form.topic) setTopic(form.topic);
+      if (form.difficulty) setDifficulty(form.difficulty);
+      if (form.count) setCount(form.count);
+    }
+    const cached = readStore("questions:result", null);
+    if (cached) setQuestions(cached);
+
+    // A handoff from the Lesson Planner deliberately wins over the cached form —
+    // it is the result the user just asked to build on. Cleared immediately so a
+    // later manual visit to this tab doesn't silently re-attach a stale lesson.
+    const handoff = readStore(HANDOFF_KEY, null);
+    if (handoff) {
+      clearStore(HANDOFF_KEY);
+      if (handoff.lesson) setLesson(handoff.lesson);
+      if (QGEN_GRADES.includes(handoff.grade)) setGrade(handoff.grade);
+      if (QGEN_SUBJECTS.includes(handoff.subject)) setSubject(handoff.subject);
+      if (handoff.topic) setTopic(handoff.topic);
+    }
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    writeStore("questions:form", { grade, subject, topic, difficulty, count });
+  }, [grade, subject, topic, difficulty, count, hydrated]);
+
+  useEffect(() => {
+    if (questions) writeStore("questions:result", questions);
+  }, [questions]);
 
   async function generate() {
     setLoading(true);
     setError("");
     setQuestions(null);
     try {
+      // Only the parts questions should actually test are sent. The full plan carries
+      // explanation/activities/realworld prose that would just burn context.
+      const lessonBrief = lesson
+        ? {
+            title: lesson.title,
+            objectives: lesson.objectives,
+            examples: lesson.examples,
+            homework: lesson.homework,
+          }
+        : undefined;
       const res = await fetch("/api/questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ grade, subject, topic, difficulty, count }),
+        body: JSON.stringify({ grade, subject, topic, difficulty, count, lesson: lessonBrief }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error();
@@ -175,16 +277,26 @@ function QuestionGenerator() {
       <h1 className="page-title">Question Generator<Underline /></h1>
       <p className="page-desc">Generate a mixed set of questions for a topic, then review each one before adding it to an assessment.</p>
       <div className="form-card" aria-busy={loading}>
+        {lesson && (
+          <div className="handoff-banner">
+            <div className="handoff-banner-text">
+              <strong>Building on your lesson plan</strong>
+              <span>{lesson.title}</span>
+            </div>
+            <button type="button" className="handoff-clear" onClick={() => setLesson(null)}>
+              Use topic only
+            </button>
+          </div>
+        )}
         <div className="field-row">
           <Field label="Grade">
             <select value={grade} onChange={(e) => setGrade(e.target.value)}>
-              {["Grade 7", "Grade 8", "Grade 9", "Grade 10"].map((g) => <option key={g}>{g}</option>)}
+              {QGEN_GRADES.map((g) => <option key={g}>{g}</option>)}
             </select>
           </Field>
           <Field label="Subject">
             <select value={subject} onChange={(e) => setSubject(e.target.value)}>
-              <option>Mathematics</option>
-              <option>Physics</option>
+              {QGEN_SUBJECTS.map((s) => <option key={s}>{s}</option>)}
             </select>
           </Field>
           <Field label="Difficulty">
@@ -252,6 +364,20 @@ function Tutor() {
   const [error, setError] = useState("");
   const [failedMessage, setFailedMessage] = useState("");
   const logRef = useRef(null);
+
+  // Restore the conversation on mount. Only a real multi-turn chat is restored —
+  // if the cache still holds just the greeting, keep the default initial state
+  // so the tutor always opens with its welcome message.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    const cached = readStore("tutor:history", null);
+    if (Array.isArray(cached) && cached.length > 1) setHistory(cached);
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (hydrated) writeStore("tutor:history", history);
+  }, [history, hydrated]);
 
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;

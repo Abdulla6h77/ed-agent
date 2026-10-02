@@ -35,6 +35,20 @@ Three core flows, each powered by a live LLM call:
   payloads don't get cut off mid-object (the tutor route stays at 800 — its replies are short).
 - Keys are read server-side only and never sent to the browser.
 
+## Work is never lost, and flows flow into each other
+
+- **Results persist.** The tabs are conditionally rendered, so React unmounts a panel the moment
+  you switch away from it — which would normally wipe the generated lesson, questions and tutor
+  conversation. Everything is cached to `localStorage` via `lib/storage.js`, so results survive
+  tab switches, a page refresh, and the navigation to `/grading-agent`. All reads are SSR-safe and
+  wrapped in `try/catch`: a disabled or full storage degrades to "no cache", never to a crash.
+- **Lesson plan → questions.** A generated lesson has a **"Generate questions from this plan →"**
+  button. It carries the plan's grade/subject/topic across, attaches the plan itself, and
+  `/api/questions` folds its objectives, worked examples and homework into the prompt alongside
+  the curriculum grounding — so the questions test what was actually taught. Only those fields are
+  forwarded (not the whole plan) to keep the prompt lean. A **"Use topic only"** link detaches the
+  plan, and generating questions without a plan works exactly as before.
+
 ## Project structure
 
 ```
@@ -46,7 +60,9 @@ ed-agent-mvp/
 │       ├── questions.js      # POST /api/questions
 │       └── tutor.js          # POST /api/tutor
 ├── lib/
-│   └── claude.js             # AI gateway: provider selection + JSON parsing
+│   ├── claude.js             # AI gateway: provider selection + JSON parsing
+│   ├── curriculum.js         # curriculum lookup that grounds generated content
+│   └── storage.js            # SSR-safe localStorage helpers (result caching)
 ├── styles/globals.css
 └── grading-agent/            # separate TrueForge slice — see below
 ```
@@ -153,7 +169,7 @@ git commit -m "Ed Agent MVP: Next.js app (dual-provider AI) + TrueForge grading 
 git push origin main
 ```
 
-Run these from the repo root. `.env.local` and `node_modules/` are gitignored and will not
+Run these from  the repo root. `.env.local` and `node_modules/` are gitignored and will not
 be committed — double-check with `git status` before committing.
 
 ## What's still mocked / simplified vs the full blueprint
