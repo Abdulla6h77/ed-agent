@@ -17,12 +17,11 @@
 html,body{ margin:0; background:var(--chalk-green-deep); color:var(--ink); font-family:'Inter',system-ui,sans-serif; }
 
 .app{
-  max-width:1000px; margin:0 auto; min-height:100vh; background:var(--paper);
+  max-width:100%; min-height:100vh; background:var(--paper);
   background-image:
     linear-gradient(var(--grid-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size:28px 28px;
-  box-shadow:0 0 60px rgba(0,0,0,0.35);
 }
 header{
   position:sticky; top:0; z-index:10;
@@ -43,7 +42,7 @@ nav.tabs{ display:flex; gap:4px; }
 .tab-content{ animation:tab-enter .18s ease-out; }
 main{ padding:36px; min-height:520px; }
 
-.hero-strip{ max-width:60ch; margin-bottom:26px; }
+.hero-strip{ max-width:80ch; margin-bottom:26px; }
 .hero-strip h2{
   font-family:'Fraunces',serif; font-weight:600; font-size:18px; color:#B9CFC3;
   margin:0 0 6px;
@@ -66,7 +65,7 @@ h1.page-title{
   display:inline-block; position:relative;
 }
 h1.page-title .underline{ position:absolute; left:0; bottom:-8px; width:100%; height:8px; }
-.page-desc{ color:#5A6B63; font-size:14px; margin:14px 0 26px 0; max-width:60ch; }
+.page-desc{ color:#5A6B63; font-size:14px; margin:14px 0 26px 0; max-width:80ch; }
 
 .form-card{ background:var(--chalk-white); border:1px solid var(--grid-line); border-radius:14px; padding:22px; margin-bottom:24px; }
 .field-row{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
@@ -310,4 +309,89 @@ button:focus-visible, select:focus-visible, input:focus-visible{ outline:2px sol
 /* Preserve paragraph breaks in tutor chat bubbles */
 .bubble {
   white-space: pre-wrap;
+}
+
+/* ── Grading Agent tab ─────────────────────────────────────────────────── */
+
+.grade-answer-input {
+  font-size: 14px; padding: 10px 12px; border-radius: 8px;
+  border: 1.5px solid #D9D4C4; background: var(--paper); color: var(--ink);
+  font-family: 'Inter', sans-serif; width: 100%; resize: vertical;
+  min-height: 100px;
+}
+.grade-answer-input:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+.grade-starters {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px;
+}
+.grade-starter-label { font-size: 11px; font-weight: 600; color: var(--slate); text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* Result card */
+.grade-result-card {
+  background: var(--paper); border: 1.5px dashed var(--grid-line);
+  border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 20px;
+}
+.grade-result-header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
+.grade-result-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Verdict badge */
+.grade-verdict {
+  display: inline-flex; align-items: center; padding: 6px 16px; border-radius: 999px;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap;
+}
+.verdict-correct   { background: #D4EDDA; color: #155724; border: 1.5px solid #A8D5B5; }
+.verdict-partial   { background: #FFF3CD; color: #856404; border: 1.5px solid #F0D080; }
+.verdict-incorrect { background: #F8D7DA; color: #721C24; border: 1.5px solid #E9AAB0; }
+
+.grade-result-section { display: flex; flex-direction: column; gap: 6px; }
+.grade-result-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--slate);
+}
+.grade-result-feedback { font-size: 14px; line-height: 1.6; margin: 0; color: var(--ink); }
+
+.grade-concept-list { margin: 4px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.grade-concept-list li { font-size: 13px; line-height: 1.5; }
+.grade-concept-present li { color: #155724; }
+.grade-concept-missing li { color: #721C24; }
+
+/* Approval box */
+.grade-approval-box {
+  background: #FEFBF0; border: 1.5px solid var(--brass);
+  border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px;
+}
+.grade-approval-prompt { display: flex; align-items: flex-start; gap: 14px; }
+.grade-approval-icon { font-size: 22px; line-height: 1; flex-shrink: 0; margin-top: 2px; }
+.grade-approval-prompt strong { font-size: 15px; color: var(--chalk-green); display: block; margin-bottom: 4px; }
+.grade-approval-prompt p { margin: 0; font-size: 13px; color: #5A6B63; line-height: 1.5; }
+.grade-approval-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-approve { background: #2D6A4F; color: #fff; }
+.btn-approve:hover { background: #1E4D38; }
+.btn-dismiss { background: transparent; color: var(--slate); border: 1.5px solid var(--grid-line); }
+.btn-dismiss:hover { border-color: var(--slate); background: var(--paper-dim); }
+.grade-save-error { font-size: 13px; color: var(--correction); margin: 0; }
+
+/* Saved confirmation */
+.grade-saved-box {
+  display: flex; align-items: flex-start; gap: 14px;
+  background: #D4EDDA; border: 1.5px solid #A8D5B5; border-radius: 12px; padding: 16px 20px;
+}
+.grade-saved-icon { font-size: 22px; flex-shrink: 0; line-height: 1; }
+.grade-saved-box strong { font-size: 15px; color: #155724; display: block; margin-bottom: 4px; }
+.grade-saved-box p { margin: 0; font-size: 13px; color: #155724; }
+
+.grade-grade-again {
+  background: none; border: none; color: var(--slate); font-size: 13px; font-weight: 600;
+  cursor: pointer; padding: 0; text-decoration: underline; text-underline-offset: 3px;
+  align-self: flex-start;
+}
+.grade-grade-again:hover { color: var(--brass-dim); }
+
+@media (max-width: 640px) {
+  .grade-result-header { flex-direction: column; gap: 10px; }
+  .grade-approval-actions { flex-direction: column; }
+  .btn-approve, .btn-dismiss { width: 100%; justify-content: center; }
+  .grade-starters { gap: 6px; }
 }

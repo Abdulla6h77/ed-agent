@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { readStore, writeStore, clearStore } from "../lib/storage";
 
@@ -46,6 +45,7 @@ export default function Home() {
             ["planner", "Lesson Planner"],
             ["questions", "Question Generator"],
             ["tutor", "AI Tutor"],
+            ["grading", "Grading Agent"],
           ].map(([key, label]) => (
             <button
               key={key}
@@ -55,7 +55,6 @@ export default function Home() {
               {label}
             </button>
           ))}
-          <Link className="tab" href="/grading-agent">Grading Agent ↗</Link>
         </nav>
       </header>
       <main>
@@ -63,6 +62,7 @@ export default function Home() {
           {tab === "planner" && <LessonPlanner onGoToQuestions={() => setTab("questions")} />}
           {tab === "questions" && <QuestionGenerator />}
           {tab === "tutor" && <Tutor />}
+          {tab === "grading" && <GradingAgent />}
         </div>
       </main>
       <AppFooter />
@@ -472,6 +472,265 @@ function TypingIndicator() {
   );
 }
 
+function GradingAgent() {
+  const [grade, setGrade] = useState("Grade 9");
+  const [subject, setSubject] = useState("Mathematics");
+  const [topic, setTopic] = useState("Quadratic Equations");
+  const [studentAnswer, setStudentAnswer] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState(null);         // grading result pending approval
+  const [approved, setApproved] = useState(false);    // true after user approves
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [saved, setSaved] = useState(null);           // { total_finalized }
+
+  async function grade_answer() {
+    if (!studentAnswer.trim()) return;
+    setLoading(true);
+    setError("");
+    setResult(null);
+    setApproved(false);
+    setSaved(null);
+    setSaveError("");
+    try {
+      const res = await fetch("/api/grade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ grade, subject, topic, studentAnswer }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Grading failed");
+      setResult(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function finalize(approve) {
+    if (!approve) {
+      setApproved(false);
+      setResult(null);
+      return;
+    }
+    setSaving(true);
+    setSaveError("");
+    try {
+      const res = await fetch("/api/grade-finalize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          grade: result.grade,
+          subject: result.subject,
+          topic: result.topic,
+          studentAnswer: result.studentAnswer,
+          verdict: result.verdict,
+          feedback: result.feedback,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Save failed");
+      setApproved(true);
+      setSaved(data);
+    } catch (err) {
+      setSaveError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function reset() {
+    setResult(null);
+    setApproved(false);
+    setSaved(null);
+    setSaveError("");
+    setStudentAnswer("");
+    setError("");
+  }
+
+  const verdictClass = result
+    ? result.verdict === "CORRECT" ? "verdict-correct"
+    : result.verdict === "PARTIAL" ? "verdict-partial"
+    : "verdict-incorrect"
+    : "";
+
+  return (
+    <section aria-busy={loading}>
+      <h1 className="page-title">Grading Agent<Underline /></h1>
+      <p className="page-desc">
+        Paste a student&apos;s answer — the agent fetches the official rubric, grades against expected
+        concepts, then asks for your approval before saving the result.
+      </p>
+
+      {/* Input form — hidden once result is showing */}
+      {!result && (
+        <div className="form-card" aria-busy={loading}>
+          <div className="field-row">
+            <Field label="Grade">
+              <select value={grade} onChange={(e) => setGrade(e.target.value)}>
+                {["Grade 7","Grade 8","Grade 9","Grade 10","Grade 11"].map((g) => <option key={g}>{g}</option>)}
+              </select>
+            </Field>
+            <Field label="Subject">
+              <select value={subject} onChange={(e) => setSubject(e.target.value)}>
+                <option>Mathematics</option>
+                <option>Physics</option>
+              </select>
+            </Field>
+          </div>
+          <div className="field-row">
+            <Field label="Topic" wide>
+              <input
+                type="text"
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="e.g. Quadratic Equations"
+              />
+            </Field>
+          </div>
+          <div className="field-row">
+            <Field label="Student's Answer" wide>
+              <textarea
+                className="grade-answer-input"
+                value={studentAnswer}
+                onChange={(e) => setStudentAnswer(e.target.value)}
+                placeholder="Paste the student's full answer here…"
+                rows={5}
+              />
+            </Field>
+          </div>
+          <div className="grade-starters">
+            <span className="grade-starter-label">Try an example:</span>
+            <button type="button" className="chip" disabled={loading}
+              onClick={() => {
+                setGrade("Grade 9"); setSubject("Mathematics"); setTopic("Quadratic Equations");
+                setStudentAnswer("x² − 5x + 6 = 0, divide by x to get x − 5 + 6/x = 0, so x = 5.");
+              }}>
+              Wrong answer — Quadratic
+            </button>
+            <button type="button" className="chip" disabled={loading}
+              onClick={() => {
+                setGrade("Grade 9"); setSubject("Mathematics"); setTopic("Quadratic Equations");
+                setStudentAnswer("x² − 5x + 6 = 0 factors as (x − 2)(x − 3) = 0, so x = 2 or x = 3.");
+              }}>
+              Correct answer — Quadratic
+            </button>
+            <button type="button" className="chip" disabled={loading}
+              onClick={() => {
+                setGrade("Grade 9"); setSubject("Physics"); setTopic("Newton's Laws of Motion");
+                setStudentAnswer("A 10 kg cart is pushed with 25 N force, so acceleration is 25/10 = 2.5 m/s². Also its weight in kg is 10 kg.");
+              }}>
+              Partial answer — Newton
+            </button>
+          </div>
+          <button type="button" className="btn" onClick={grade_answer} disabled={loading || !studentAnswer.trim()}>
+            {loading && <svg className="spinner-svg" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" strokeOpacity="0.3" strokeWidth="2.5"/><path d="M14 8a6 6 0 0 0-6-6" stroke="var(--chalk-green)" strokeWidth="2.5" strokeLinecap="round"/></svg>}
+            {loading ? "Grading…" : "Grade Answer"}
+          </button>
+        </div>
+      )}
+
+      {loading && (
+        <div className="skeleton" aria-hidden="true">
+          <div className="skeleton-bar skeleton-heading" />
+          <div className="skeleton-group">
+            <div className="skeleton-bar skeleton-label" />
+            <div className="skeleton-bar skeleton-line w80" />
+            <div className="skeleton-bar skeleton-line w65" />
+          </div>
+          <div className="skeleton-group">
+            <div className="skeleton-bar skeleton-label" />
+            <div className="skeleton-bar skeleton-line w90" />
+            <div className="skeleton-bar skeleton-line w75" />
+          </div>
+        </div>
+      )}
+
+      {error && !loading && (
+        <StatusNotice title="Grading failed" message={error} onRetry={grade_answer} />
+      )}
+
+      {/* Result card */}
+      {result && !loading && (
+        <div className="grade-result-card">
+          <div className="grade-result-header">
+            <div className="grade-result-meta">
+              <span className="tag">{result.grade}</span>
+              <span className="tag">{result.subject}</span>
+              <span className="tag">{result.topic}</span>
+            </div>
+            <span className={`grade-verdict ${verdictClass}`}>{result.verdict}</span>
+          </div>
+
+          <div className="grade-result-section">
+            <div className="grade-result-label">Feedback</div>
+            <p className="grade-result-feedback">{result.feedback}</p>
+          </div>
+
+          {result.concepts_present?.length > 0 && (
+            <div className="grade-result-section">
+              <div className="grade-result-label">Concepts present ✓</div>
+              <ul className="grade-concept-list grade-concept-present">
+                {result.concepts_present.map((c, i) => <li key={i}>{c}</li>)}
+              </ul>
+            </div>
+          )}
+
+          {result.concepts_missing?.length > 0 && (
+            <div className="grade-result-section">
+              <div className="grade-result-label">Concepts missing ✗</div>
+              <ul className="grade-concept-list grade-concept-missing">
+                {result.concepts_missing.map((c, i) => <li key={i}>{c}</li>)}
+              </ul>
+            </div>
+          )}
+
+          {/* Human approval step */}
+          {!approved && !saved && (
+            <div className="grade-approval-box">
+              <div className="grade-approval-prompt">
+                <span className="grade-approval-icon">⏸</span>
+                <div>
+                  <strong>Awaiting your approval</strong>
+                  <p>Review the verdict above. Approve to save this grade to the record, or dismiss to discard.</p>
+                </div>
+              </div>
+              {saveError && <p className="grade-save-error">{saveError}</p>}
+              <div className="grade-approval-actions">
+                <button type="button" className="btn btn-approve" onClick={() => finalize(true)} disabled={saving}>
+                  {saving ? "Saving…" : "✓ Approve & Save"}
+                </button>
+                <button type="button" className="btn btn-dismiss" onClick={() => finalize(false)} disabled={saving}>
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Saved confirmation */}
+          {approved && saved && (
+            <div className="grade-saved-box">
+              <span className="grade-saved-icon">✓</span>
+              <div>
+                <strong>Grade saved</strong>
+                {saved.total_finalized && (
+                  <p>{saved.total_finalized} record{saved.total_finalized !== 1 ? "s" : ""} in the grade store.</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          <button type="button" className="grade-grade-again" onClick={reset}>
+            ← Grade another answer
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function AppFooter() {
   return (
     <footer className="app-footer">
@@ -479,7 +738,6 @@ function AppFooter() {
         <strong>Ed Agent — AI for better teaching</strong>
       </div>
       <nav className="app-footer-links">
-        <a href="/grading-agent">Grading Agent</a>
         <a href="https://github.com/Abdulla6h77/ed-agent" target="_blank" rel="noreferrer">GitHub</a>
       </nav>
     </footer>
