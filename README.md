@@ -160,6 +160,10 @@ Full clone → configure → run → demo instructions live in
 **[`SETUP-GUIDE.md`](SETUP-GUIDE.md)**. It covers WSL setup, provider keys (including the
 DashScope base-URL gotcha), health checks, the demo script, troubleshooting and cleanup.
 
+Want to understand **how it works under the hood** — the AI gateway, what each feature sends
+to the model, how output is shaped, and a detailed walkthrough of the AI Tutor's prompt rules?
+See **[`HOW-IT-WORKS.md`](HOW-IT-WORKS.md)**.
+
 
 ## Pushing to GitHub
 
